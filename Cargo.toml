@@ -1,0 +1,6 @@
+[package]
+name = "lial"
+version = "0.1.0"
+authors = ["Lou Knauer <lou.knauer@gmx.de>"]
+
+[dependencies]
