@@ -27,4 +27,12 @@ nil
 ; Math:
 (+ 1 2 3 (+ 4 5) 6)
 
+; Functions:
+(def inc (fn {n} (+ 1 n)))
+(echo "meaning of life: " (inc 41))
 ```
+
+## TODO:
+- `let`, `defn`, `do`, ...
+- `-`, `*`, `/`, `%`, `hex`, `bin`, `>`, `<`, `=`, `>=`, `<=`, `not`, ...
+- write `#[test]`s

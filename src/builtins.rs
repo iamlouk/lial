@@ -16,3 +16,11 @@ pub fn add(args: Vec<Rc<Value>>) -> EvalResult {
 	}
 	Ok(Rc::new(sum))
 }
+
+pub fn echo(args: Vec<Rc<Value>>) -> EvalResult {
+	for arg in args {
+		print!("{}", arg.to_string());
+	}
+	println!();
+	Ok(Rc::new(Value::Nil))
+}

@@ -45,6 +45,7 @@ fn main() {
 						let mut i = 0;
 						for value in values {
 							println!("${} = {:?}", i, value);
+							i += 1;
 						}
 					},
 					Err(e) => println!("Error: {:?}", e)

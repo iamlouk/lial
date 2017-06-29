@@ -1,6 +1,5 @@
 use std::collections::{LinkedList, HashMap};
 use std::rc::Rc;
-use std::fmt::{Debug, Formatter};
 use std::collections::linked_list::IntoIter;
 
 use parser::Node;
@@ -18,6 +17,54 @@ pub enum Value {
 	Func(Vec<String>, Vec<Rc<Node>>),
 	ExternalFn(fn(Vec<Rc<Value>>) -> EvalResult)
 }
+
+impl Value {
+	pub fn to_bool(&self) -> bool {
+		match self {
+			&Value::Bool(value) => value,
+			&Value::Nil => false,
+			&Value::Int(i) => i != 0,
+			&Value::Real(r) => r != 0.0,
+			_ => false
+		}
+	}
+
+	pub fn to_string(&self) -> String {
+		match self {
+			&Value::Str(ref value) => value.clone(),
+			&Value::Int(value) => value.to_string(),
+			&Value::Real(value) => value.to_string(),
+			&Value::Bool(value) => value.to_string(),
+			&Value::Nil => "<Nil>".to_string(),
+			&Value::List(ref list) => {
+				let mut string = "{ ".to_string();
+				for item in list {
+					string.push_str(item.to_string().as_str());
+					string.push(' ');
+				}
+				string.push('}');
+				string
+			},
+			&Value::Map(ref map) => {
+				if map.len() == 0 {
+					return "{:}".to_string();
+				}
+				let mut string = "{ ".to_string();
+				for (key, value) in map {
+					string.push_str(key.as_str());
+					string.push_str(": ");
+					string.push_str(value.to_string().as_str());
+					string.push(' ');
+				}
+				string.push('}');
+				string
+			},
+			&Value::Func(_, _) => "<Fn::Internal>".to_string(),
+			&Value::ExternalFn(_) => "<Fn::External>".to_string()
+		}
+	}
+}
+
 pub type EvalResult = Result<Rc<Value>, String>;
 
 
@@ -49,11 +96,12 @@ impl Env {
 	}
 
 	pub fn lookup(&self, key: &String) -> Option<Rc<Value>> {
-		let mut i: usize = self.size - 1;
+		let mut i: i32 = self.size as i32 - 1;
 		while i >= 0 {
-			if let Some(value) = self.scope[i].get(key) {
+			if let Some(value) = self.scope[i as usize].get(key) {
 				return Some(value.clone());
 			}
+			i -= 1;
 		}
 		None
 	}
@@ -70,6 +118,7 @@ impl Interpreter {
 		};
 		interpreter.env.enter();
 		interpreter.expose_external_func("+", builtins::add);
+		interpreter.expose_external_func("echo", builtins::echo);
 		interpreter
 	}
 
@@ -178,37 +227,111 @@ impl Interpreter {
 					i += 1;
 				}
 
-				let mut returnValue: Rc<Value> = Rc::new( Value::Nil );
+				let mut return_value: Rc<Value> = Rc::new( Value::Nil );
 				for node in nodes {
-					returnValue = match self.eval(node.clone()) {
+					return_value = match self.eval(node.clone()) {
 						Ok(value) => value,
 						Err(e) => { return Err(e); }
 					}
 				}
-				Ok(returnValue)
+				self.env.exit();
+				Ok(return_value)
 			},
 			_ => Err("cannot evaluate expression".to_string())
 		}
 	}
 
 	fn eval_fn(&mut self, mut iter: IntoIter<Rc<Node>>) -> EvalResult {
-		unimplemented!();
+		let mut args: Vec<String> = vec![];
+		if let Some(node) = iter.next() {
+			match *node {
+				Node::List(ref list) => {
+					for node in list {
+						match *node.clone() {
+							Node::Symbol(ref sym) => { args.push(sym.clone()); },
+							_ => { return Err("illegal fn syntax".to_string()); }
+						}
+					}
+				},
+				_ => { return Err("illegal fn syntax".to_string()); }
+			}
+		} else { return Err("illegal fn syntax".to_string()); }
+		Ok( Rc::new( Value::Func(args, iter.collect()) ) )
 	}
 
 	fn eval_def(&mut self, mut iter: IntoIter<Rc<Node>>) -> EvalResult {
-		unimplemented!();
+		let key: String;
+		if let Some(node) = iter.next() {
+			match *node {
+				Node::Symbol(ref sym) => { key = sym.clone(); },
+				_ => { return Err("illegal def syntax".to_string()); }
+			}
+		} else { return Err("illegal def syntax".to_string()); }
+
+		let value: Rc<Value>;
+		if let Some(node) = iter.next() {
+			match self.eval(node) {
+				Ok(val) => { value = val; },
+				Err(e) => { return Err(e); }
+			}
+		} else { return Err("illegal def syntax".to_string()); }
+
+		if iter.count() != 0 {
+			return Err("illegal def syntax".to_string());
+		}
+
+		self.env.define_global(key, value.clone());
+		Ok(value)
 	}
 
 	fn eval_if(&mut self, mut iter: IntoIter<Rc<Node>>) -> EvalResult {
-		unimplemented!();
+		let cond: bool;
+		if let Some(node) = iter.next() {
+			match self.eval(node) {
+				Ok(value) => { cond = value.to_bool(); },
+				Err(e) => { return Err(e); }
+			}
+		} else { return Err("illegal if syntax".to_string()); }
+
+		if let Some(if_true) = iter.next() {
+			if cond {
+				self.eval(if_true)
+			} else if let Some(if_false) = iter.next() {
+				self.eval(if_false)
+			} else {
+				Ok(Rc::new(Value::Nil))
+			}
+		} else {
+			Err("illegal if syntax".to_string())
+		}
 	}
 
 	fn eval_and(&mut self, mut iter: IntoIter<Rc<Node>>) -> EvalResult {
-		unimplemented!();
+		while let Some(node) = iter.next() {
+			match self.eval(node) {
+				Ok(value) => {
+					if !value.to_bool() {
+						return Ok(Rc::new(Value::Bool(false)));
+					}
+				},
+				Err(e) => { return Err(e); }
+			}
+		}
+		Ok(Rc::new(Value::Bool(true)))
 	}
 
 	fn eval_or(&mut self, mut iter: IntoIter<Rc<Node>>) -> EvalResult {
-		unimplemented!();
+		while let Some(node) = iter.next() {
+			match self.eval(node) {
+				Ok(value) => {
+					if value.to_bool() {
+						return Ok(Rc::new(Value::Bool(true)));
+					}
+				},
+				Err(e) => { return Err(e); }
+			}
+		}
+		Ok(Rc::new(Value::Bool(false)))
 	}
 
 }
