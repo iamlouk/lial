@@ -1,0 +1,53 @@
+; Int:
+10 0xFF 42 0b1010 0o123 0
+
+; Real:
+0.5 0.42 12.345
+
+; Bool:
+true false
+
+; String:
+"Hello world!" "\"abc\n...\txyz"
+
+; Nil:
+nil
+
+; Map:
+{:} { a: (+ 10 12 20 ) hallo: "welt" }
+
+; Lists:
+{ 1 2 3 4 "5" { 6 7 } }
+
+; Math:
+(+ 1 2.0 3 (+ 4 5.6) 7.89)
+(* 2.5 (+ 3 4) 5)
+
+; Functions:
+(def inc (fn {n} (+ 1 n)))
+(echo "meaning of life: " (inc 41))
+(echo "1234 = 0x" (hex 1234))
+
+
+(def dec (fn {n} (- n 1)))
+
+(def fac
+	(fn {n}
+		(if (= n 1)
+			1
+			(* (fac (dec n)) n))))
+
+(echo "1! = " (fac 1))
+(echo "2! = " (fac 2))
+(echo "3! = " (fac 3))
+(echo "4! = " (fac 4))
+(echo "5! = " (fac 5))
+
+
+(def count (fn {n}
+	(if (= n 0)
+		nil
+		((fn {} (echo n) (count (dec n)))))))
+
+(echo "countdown: ")
+(count 5)

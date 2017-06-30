@@ -1,6 +1,6 @@
 # Lial - Lial is a language
 
-Lial is a programming language and interpreter. I have never used Lisp, but after reading its Wikipedia-Page, I decided to write an interpreter for my own lisp-like language. Inspired by [swgillespie/rust-lisp](https://github.com/swgillespie/rust-lisp)
+Lial is a programming language and interpreter. I have never used Lisp, but after reading its Wikipedia-Page, I decided to write an interpreter for my own lisp-like language.
 
 ```lisp
 ; Int:
@@ -25,14 +25,25 @@ nil
 { 1 2 3 4 "5" { 6 7 } }
 
 ; Math:
-(+ 1 2 3 (+ 4 5) 6)
+(+ 1 2.0 3 (+ 4 5.6) 7.89)
+(* 2.5 (+ 3 4) 5)
 
 ; Functions:
 (def inc (fn {n} (+ 1 n)))
 (echo "meaning of life: " (inc 41))
+
+; ...:
+(echo "1234 = 0x" (hex 1234))
+
 ```
 
 ## TODO:
 - `let`, `defn`, `do`, ...
-- `-`, `*`, `/`, `%`, `hex`, `bin`, `>`, `<`, `=`, `>=`, `<=`, `not`, ...
+- `/`, `%`, `bin`, `>`, `<`, `>=`, `<=`, `not`, ...
 - write `#[test]`s
+- litteral for negative numbers
+
+
+---
+
+Inspired by [swgillespie/rust-lisp](https://github.com/swgillespie/rust-lisp), [rspivak/lsbasi](https://github.com/rspivak/lsbasi)

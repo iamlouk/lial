@@ -5,7 +5,7 @@ use std::collections::linked_list::IntoIter;
 use parser::Node;
 use builtins;
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub enum Value {
 	Str(String),
 	Int(i64),
@@ -16,6 +16,21 @@ pub enum Value {
 	Map(HashMap<String, Rc<Value>>),
 	Func(Vec<String>, Vec<Rc<Node>>),
 	ExternalFn(fn(Vec<Rc<Value>>) -> EvalResult)
+}
+
+impl PartialEq for Value {
+	fn eq(&self, other: &Value) -> bool {
+		match (self, other) {
+			(&Value::Str(ref a), &Value::Str(ref b)) => a == b,
+			(&Value::Int(a), &Value::Int(b)) => a == b,
+			(&Value::Real(a), &Value::Real(b)) => a == b,
+			(&Value::Bool(a), &Value::Bool(b)) => a == b,
+			(&Value::Nil, &Value::Nil) => true,
+			(&Value::List(ref a), &Value::List(ref b)) => a == b,
+			(&Value::Map(ref a), &Value::Map(ref b)) => a == b,
+			_ => false
+		}
+	}
 }
 
 impl Value {
@@ -118,6 +133,10 @@ impl Interpreter {
 		};
 		interpreter.env.enter();
 		interpreter.expose_external_func("+", builtins::add);
+		interpreter.expose_external_func("-", builtins::sub);
+		interpreter.expose_external_func("*", builtins::mul);
+		interpreter.expose_external_func("=", builtins::equals);
+		interpreter.expose_external_func("hex", builtins::hex);
 		interpreter.expose_external_func("echo", builtins::echo);
 		interpreter
 	}
