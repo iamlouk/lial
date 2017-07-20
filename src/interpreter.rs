@@ -137,6 +137,7 @@ impl Interpreter {
 		interpreter.expose_external_func("*", builtins::mul);
 		interpreter.expose_external_func("=", builtins::equals);
 		interpreter.expose_external_func("hex", builtins::hex);
+		interpreter.expose_external_func("bin", builtins::bin);
 		interpreter.expose_external_func("echo", builtins::echo);
 		interpreter
 	}

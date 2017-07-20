@@ -44,7 +44,7 @@ impl<'a> Tokenizer<'a> {
 		}
 	}
 
-	pub fn collect(&mut self) -> Result<Vec<Token>, String> {
+	/*pub fn collect(&mut self) -> Result<Vec<Token>, String> {
 		let mut tokens: Vec<Token> = vec![];
 		while let Some(res) = self.next() {
 			match res {
@@ -53,7 +53,7 @@ impl<'a> Tokenizer<'a> {
 			}
 		}
 		Ok(tokens)
-	}
+	}*/
 
 	fn read_int(&mut self, base: u32) -> TokenizerResult {
 		self.chars.next().unwrap(); // consume 'x', 'o' or 'b'
@@ -123,6 +123,7 @@ impl<'a> Iterator for Tokenizer<'a> {
 									match escaped.unwrap() {
 										'n' => buf.push('\n'),
 										't' => buf.push('\t'),
+										'r' => buf.push('\r'),
 										'\\' => buf.push('\\'),
 										'\"' => buf.push('\"'),
 										_ => {
@@ -169,7 +170,7 @@ impl<'a> Iterator for Tokenizer<'a> {
 						'b' => Some(self.read_int(2)),
 						'o' => Some(self.read_int(8)),
 						'x' => Some(self.read_int(16)),
-						_ => Some(Ok(Token::Int(0))) // Some(Err("illegal number litteral".to_string()))
+						_ => Some(Ok(Token::Int(0))) // illegal number litteral?
 					};
 				},
 				'1'...'9' => {
@@ -237,3 +238,41 @@ impl<'a> Iterator for Tokenizer<'a> {
 		}
 	}
 }
+
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn numerbs() {
+		let raw = " 0 1 42\n0.42 42.0\t123.456 0b101010 \n\t 0b00101010 0o52 0x2A 0x2a 0x0f0F ".to_string();
+		let mut tokens = Tokenizer::new(&raw);
+		assert_eq!(tokens.next().unwrap(), Ok(Token::Int(0)));
+		assert_eq!(tokens.next().unwrap(), Ok(Token::Int(1)));
+		assert_eq!(tokens.next().unwrap(), Ok(Token::Int(42)));
+		assert_eq!(tokens.next().unwrap(), Ok(Token::Real(0.42)));
+		assert_eq!(tokens.next().unwrap(), Ok(Token::Real(42.0)));
+		assert_eq!(tokens.next().unwrap(), Ok(Token::Real(123.456)));
+		assert_eq!(tokens.next().unwrap(), Ok(Token::Int(42)));
+		assert_eq!(tokens.next().unwrap(), Ok(Token::Int(42)));
+		assert_eq!(tokens.next().unwrap(), Ok(Token::Int(42)));
+		assert_eq!(tokens.next().unwrap(), Ok(Token::Int(42)));
+		assert_eq!(tokens.next().unwrap(), Ok(Token::Int(42)));
+		assert_eq!(tokens.next().unwrap(), Ok(Token::Int(3855)));
+		assert_eq!(tokens.next(), None);
+	}
+
+	#[test]
+	fn strings() {
+		let raw = " \"Hello, world!\" \" \\\\ \" \"abc\\n123\\txyz\" ".to_string();
+		let mut tokens = Tokenizer::new(&raw);
+		assert_eq!(tokens.next().unwrap(), Ok(Token::Str("Hello, world!".to_string())));
+		assert_eq!(tokens.next().unwrap(), Ok(Token::Str(" \\ ".to_string())));
+		assert_eq!(tokens.next().unwrap(), Ok(Token::Str("abc\n123\txyz".to_string())));
+		assert_eq!(tokens.next(), None);
+	}
+
+}
+
+

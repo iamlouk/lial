@@ -86,9 +86,20 @@ pub fn echo(args: Vec<Rc<Value>>) -> EvalResult {
 	Ok(Rc::new(Value::Nil))
 }
 
+pub fn bin(args: Vec<Rc<Value>>) -> EvalResult {
+	if args.len() != 1 {
+		return Err("bin takes only one argument of type int".to_string());
+	}
+
+	match *args[0] {
+		Value::Int(i) => Ok(Rc::new( Value::Str( format!("{:b}", i) ) )),
+		_ => Err("bin only takes int as argument".to_string())
+	}
+}
+
 pub fn hex(args: Vec<Rc<Value>>) -> EvalResult {
 	if args.len() != 1 {
-		return Err("hex takes only one argument".to_string());
+		return Err("hex takes only one argument of type int".to_string());
 	}
 
 	match *args[0] {

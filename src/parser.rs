@@ -128,7 +128,7 @@ impl Parser {
 		}
 	}
 
-	pub fn collect(&mut self) -> Result<Vec<Node>, String> {
+	/*pub fn collect(&mut self) -> Result<Vec<Node>, String> {
 		let mut nodes: Vec<Node> = vec![];
 		while let Some(res) = self.next() {
 			match res {
@@ -137,7 +137,7 @@ impl Parser {
 			}
 		}
 		Ok(nodes)
-	}
+	}*/
 }
 
 impl Iterator for Parser {
@@ -173,3 +173,39 @@ impl Iterator for Parser {
 		}
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use tokenizer::Tokenizer;
+
+	fn parse(raw: &str) -> Result<Vec<Node>, String> {
+		match Tokenizer::new(&raw.to_string()).collect() {
+			Ok(tokens) => Parser::new(tokens).collect(),
+			Err(e) => Err(e)
+		}
+	}
+
+	#[test]
+	fn collections() {
+		let mut ast = parse(" {} {:} { 1 2 3 } { hallo: \"welt\" abc: 987 } ").unwrap().into_iter();
+		let mut list = LinkedList::new();
+		let mut map = HashMap::new();
+
+
+		assert_eq!(ast.next().unwrap(), Node::List(LinkedList::new()));
+		assert_eq!(ast.next().unwrap(), Node::Map(HashMap::new()));
+		
+		list.push_back(Rc::new( Node::Int(1) ));
+		list.push_back(Rc::new( Node::Int(2) ));
+		list.push_back(Rc::new( Node::Int(3) ));
+		assert_eq!(ast.next().unwrap(), Node::List(list));
+
+		map.insert("hallo".to_string(), Rc::new( Node::Str("welt".to_string()) ));
+		map.insert("abc".to_string(),   Rc::new( Node::Int(987) ));
+		assert_eq!(ast.next().unwrap(), Node::Map(map));		
+		assert_eq!(ast.next(), None);
+	}
+
+}
+
